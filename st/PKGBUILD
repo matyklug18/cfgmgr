@@ -1,0 +1,56 @@
+pkgname="st-cfgmgr"
+pkgver="0.8.4"
+pkgrel=1
+pkgdesc="st - cfgmgr"
+arch=("x86_64")
+license=('MIT', 'GPL')
+depends=('libxft')
+source=("alpha-fix-for-st-dracula.diff" "config.h.diff"
+	"https://st.suckless.org/patches/alpha/st-alpha-0.8.2.diff"
+	"https://st.suckless.org/patches/dracula/st-dracula-0.8.2.diff"
+	"https://st.suckless.org/patches/scrollback/st-scrollback-0.8.4.diff"
+	"https://st.suckless.org/patches/scrollback/st-scrollback-mouse-20191024-a2c479c.diff"
+	"https://st.suckless.org/patches/scrollback/st-scrollback-mouse-altscreen-20200416-5703aa0.diff"
+	"https://st.suckless.org/patches/font2/st-font2-20190416-ba72400.diff"
+)
+sha256sums=("21cc2a18c8be68910e0715f8b6249cbef3be79fc81c6e35af323b96b13c88d84" "7c11efcf8bec522d6754d059f0435930a77e94f79186101446b321cf02223aaf"
+	"9c5b4b4f23de80de78ca5ec3739dc6ce5e7f72666186cf4a9c6b614ac90fb285"
+	"5eb8e0375fda9373c3b16cabe2879027300e73e48dbd9782e54ffd859e84fb7e"
+	"418e1c5df11105482f13a008218c89eadb974630c25b4a6ff3da763dc2560e44"
+	"319458d980195d18fa0f81a6898d58f8d046c5ff982ab872d741f54bb60e267d"
+	"cb87eb654985da46ff63663407184402393ad3d3013c8795570552fe56a15b9d"
+	"7279c787dba23d72a8a0a4613c0917e03d0087f0254f56a530cd9c521857d20b"
+)
+
+build() {
+	git clone https://git.suckless.org/st
+	cp *.diff st
+	cd st
+	patch -Np1 -i st-alpha-0.8.2.diff
+	patch -Np1 -i alpha-fix-for-st-dracula.diff
+	patch -Np1 -i st-dracula-0.8.2.diff
+	patch -Np1 -i st-scrollback-0.8.4.diff
+	patch -Np1 -i st-scrollback-mouse-20191024-a2c479c.diff
+	patch -Np1 -i st-scrollback-mouse-altscreen-20200416-5703aa0.diff
+	patch -Np1 -i st-font2-20190416-ba72400.diff
+	cp config.def.h config.h
+	cp ../config.h.diff .
+	patch -Np1 -i config.h.diff
+
+	FONT="$(jq -r '.font'  $HOME/.config/cfgmgr/st/cfg.json)"
+	cp config.h config.topatch.h
+
+	sed -i "s/*font = \".*\"/*font = \"$FONT\"/" config.topatch.h
+	git diff --no-index config.h config.topatch.h > custom.config.h.diff || true
+	patch -Np1 -i custom.config.h.diff
+
+	cd ..
+}
+
+package() {
+	cd st
+	DESTDIR=$pkgdir make install
+	mv $pkgdir/usr/local/* $pkgdir/usr/
+	rm -r $pkgdir/usr/local
+	cd ..
+}
