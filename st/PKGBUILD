@@ -37,10 +37,12 @@ build() {
 	cp ../config.h.diff .
 	patch -Np1 -i config.h.diff
 
-	FONT="$(jq -r '.font'  $HOME/.config/cfgmgr/st/cfg.json)"
+	FONT="$(jq -r '.font' $HOME/.config/cfgmgr/st/cfg.json)"
+	ALPHA="$(jq -r '.alpha' $HOME/.config/cfgmgr/st/cfg.json)"
 	cp config.h config.topatch.h
 
 	sed -i "s/*font = \".*\"/*font = \"$FONT\"/" config.topatch.h
+	sed -i "s/alpha = .*/alpha = $ALPHA;/" config.topatch.h
 	git diff --no-index config.h config.topatch.h > custom.config.h.diff || true
 	patch -Np1 -i custom.config.h.diff
 
